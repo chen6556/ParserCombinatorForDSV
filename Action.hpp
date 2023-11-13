@@ -17,6 +17,9 @@ struct Action
     Action(T *s, void (T::*f)(const N &))
         : func(std::bind(f, s)) {};
 
+    Action(const std::function<void(const N &)> f)
+        : func(f) {};
+
     inline void operator()(const N &value) const
     {
         return func(value);
@@ -41,6 +44,9 @@ struct Action<void>
     template <typename T>
     Action(T *s, void (T::*f)(void))
         : func(std::bind(f, s)) {};
+
+    Action(const std::function<void(void)> f)
+        : func(f) {};
 
     inline void operator()() const
     {
@@ -67,6 +73,9 @@ struct Action<std::string>
     Action(T *s, void (T::*f)(const std::string &))
         : func(std::bind(f, s, std::placeholders::_1)) {};
 
+    Action(const std::function<void(const std::string &)> f)
+        : func(f) {};
+
     inline void operator()(const std::string &value) const
     {
         return func(value);
@@ -91,6 +100,9 @@ struct Action<char>
     template <typename T>
     Action(T *s, void (T::*f)(const char))
         : func(std::bind(f, s, std::placeholders::_1)) {};
+
+    Action(const std::function<void(const char)> f)
+        : func(f) {};
 
     inline void operator()(const char value) const
     {
@@ -117,6 +129,9 @@ struct Action<double>
     Action(T *s, void (T::*f)(const double))
         : func(std::bind(f, s, std::placeholders::_1)) {};
 
+    Action(const std::function<void(const double)> f)
+        : func(f) {};
+
     inline void operator()(const double value) const
     {
         return func(value);
@@ -141,6 +156,9 @@ struct Action<int>
     template <typename T>
     Action(T *s, void (T::*f)(const int))
         : func(std::bind(f, s, std::placeholders::_1)) {};
+
+    Action(const std::function<void(const int)> f)
+        : func(f) {};
 
     inline void operator()(const int value) const
     {
