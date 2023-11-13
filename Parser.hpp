@@ -33,6 +33,12 @@ struct Parser
         call = action;
         return *this;
     }
+
+    Parser<T> &operator[](const std::function<void(void)> &f)
+    {
+        call = f;
+        return *this;
+    }
 };
 
 template <>
@@ -76,6 +82,12 @@ struct Parser<std::string>
         call = action;
         return *this;
     }
+
+    Parser<std::string> &operator[](const std::function<void(void)> &f)
+    {
+        call = f;
+        return *this;
+    }
 };
 
 template <>
@@ -100,6 +112,12 @@ struct Parser<std::vector<std::string>>
     Parser<std::vector<std::string>> &operator[](Action<void> &action)
     {
         call = action;
+        return *this;
+    }
+
+    Parser<std::vector<std::string>> &operator[](const std::function<void(void)> &f)
+    {
+        call = f;
         return *this;
     }
 };
@@ -146,6 +164,12 @@ struct Parser<char>
         call = action;
         return *this;
     }
+
+    Parser<char> &operator[](const std::function<void(void)> &f)
+    {
+        call = f;
+        return *this;
+    }
 };
 
 template <>
@@ -187,6 +211,18 @@ struct Parser<std::vector<char>>
     Parser<std::vector<char>> &operator[](Action<void> &action)
     {
         void_call = action;
+        return *this;
+    }
+
+    Parser<std::vector<char>> &operator[](const std::function<void(const std::string &)> &f)
+    {
+        call = f;
+        return *this;
+    }
+
+    Parser<std::vector<char>> &operator[](const std::function<void(void)> &f)
+    {
+        void_call = f;
         return *this;
     }
 };
@@ -258,6 +294,12 @@ struct Parser<double>
         call = action;
         return *this;
     }
+
+    Parser<double> &operator[](const std::function<void(const double)> &f)
+    {
+        call = f;
+        return *this;
+    }
 };
 
 template <>
@@ -319,6 +361,12 @@ struct Parser<int>
     Parser<int> &operator[](Action<int> &action)
     {
         call = action;
+        return *this;
+    }
+
+    Parser<int> &operator[](const std::function<void(const int)> &f)
+    {
+        call = f;
         return *this;
     }
 };

@@ -25,6 +25,12 @@ struct Action
         return func(value);
     }
 
+    Action<N> &operator=(const std::function<void(const N &)> &f)
+    {
+        func = f;
+        return *this;
+    }
+
     operator bool() const
     {
         return bool(func);
@@ -51,6 +57,12 @@ struct Action<void>
     inline void operator()() const
     {
         return func();
+    }
+
+    Action<void> &operator=(const std::function<void(void)> &f)
+    {
+        func = f;
+        return *this;
     }
 
     operator bool() const
@@ -81,6 +93,12 @@ struct Action<std::string>
         return func(value);
     }
 
+    Action<std::string> &operator=(const std::function<void(const std::string &)> &f)
+    {
+        func = f;
+        return *this;
+    }
+
     operator bool() const
     {
         return bool(func);
@@ -107,6 +125,12 @@ struct Action<char>
     inline void operator()(const char value) const
     {
         return func(value);
+    }
+
+    Action<char> &operator=(const std::function<void(const char)> &f)
+    {
+        func = f;
+        return *this;
     }
 
     operator bool() const
@@ -137,6 +161,12 @@ struct Action<double>
         return func(value);
     }
 
+    Action<double> &operator=(const std::function<void(const double)> &f)
+    {
+        func = f;
+        return *this;
+    }
+
     operator bool() const
     {
         return bool(func);
@@ -163,6 +193,12 @@ struct Action<int>
     inline void operator()(const int value) const
     {
         return func(value);
+    }
+
+    Action<int> &operator=(const std::function<void(const int)> &f)
+    {
+        func = f;
+        return *this;
     }
 
     operator bool() const
