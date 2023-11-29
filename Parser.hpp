@@ -925,7 +925,20 @@ inline Parser<char> alnum_p()
 
 inline Parser<char> eol_p()
 {
-    return Parser<char>(10) | Parser<char>(13);
+    return Parser<char>(std::function<std::optional<char>(std::string_view &)>(
+        [=](std::string_view &stream) -> std::optional<char>
+        {
+            if (!stream.empty() && (stream.front() == 10 || stream.front() == 13))
+            {
+                const char ch = stream.front();
+                stream.remove_prefix(1);
+                return ch;
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        }));
 }
 
 inline Parser<double> float_p()
