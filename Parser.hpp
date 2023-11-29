@@ -992,26 +992,61 @@ inline Parser<std::vector<char>> pair(const Parser<L> &left, const Parser<R> &ri
                 return std::nullopt;
             }
             std::string_view stream_copy(stream);
-            if (!left(stream_copy).has_value())
+            if constexpr(std::is_same<L, bool>::value)
             {
-                return std::nullopt;
+                if (!left(stream_copy))
+                {
+                    return std::nullopt;
+                }
+            }
+            else
+            {
+                if (!left(stream_copy).has_value())
+                {
+                    return std::nullopt;
+                }
             }
 
             size_t pari_count = 1;
             while (pari_count > 0 && !stream_copy.empty())
             {
-                if (right(stream_copy).has_value())
+                if constexpr(std::is_same<R, bool>::value)
                 {
-                    --pari_count;
-                }
-                else if (left(stream_copy).has_value())
-                {
-                    ++pari_count;
+                    if (right(stream_copy))
+                    {
+                        --pari_count;
+                        right_length = temp - stream_copy.length();
+                        continue;
+                    }
                 }
                 else
                 {
-                    stream_copy.remove_prefix(1);
+                    if (right(stream_copy).has_value())
+                    {
+                        --pari_count;
+                        right_length = temp - stream_copy.length();
+                        continue;
+                    }
                 }
+                
+                if constexpr(std::is_same<L, bool>::value)
+                {
+                    if (left(stream_copy))
+                    {
+                        ++pari_count;
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (left(stream_copy).has_value())
+                    {
+                        ++pari_count;
+                        continue;
+                    }
+                }
+
+                stream_copy.remove_prefix(1);
             }
             if (pari_count == 0)
             {
@@ -1029,7 +1064,7 @@ inline Parser<std::vector<char>> pair(const Parser<L> &left, const Parser<R> &ri
 template <typename A, typename B, typename C>
 inline Parser<bool> pair(const Parser<A> &left, const Parser<B> &exp, const Parser<C> &right)
 {
-     return Parser<bool>(std::function<bool(std::string_view &)>(
+    return Parser<bool>(std::function<bool(std::string_view &)>(
         [=](std::string_view &stream) -> bool
         {
             if (stream.empty())
@@ -1038,7 +1073,7 @@ inline Parser<bool> pair(const Parser<A> &left, const Parser<B> &exp, const Pars
             }
             
             std::string_view stream_copy(stream);
-            if constexpr(std::is_same<C, bool>::value)
+            if constexpr(std::is_same<A, bool>::value)
             {
                 if (!left(stream_copy))
                 {
