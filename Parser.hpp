@@ -476,7 +476,7 @@ Parser<bool> operator>>(const Parser<bool> &left, const Parser<T> &right)
             }));
 }
 
-Parser<bool> operator>>(const Parser<bool> &left, const Parser<bool> &right)
+inline Parser<bool> operator>>(const Parser<bool> &left, const Parser<bool> &right)
 {
     return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
@@ -511,17 +511,10 @@ Parser<bool> operator|(const Parser<L> &left, const Parser<R> &right)
 template <typename T>
 Parser<bool> operator|(const Parser<T> &left, const Parser<T> &right)
 {
-    return Parser<T>(std::function<bool(std::string_view &stream)>
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
-                if constexpr(std::is_same<T, bool>::value)
-                {
-                    return left(stream) || right(stream);
-                }
-                else
-                {
-                    return left(stream).has_value() || right(stream).has_value();
-                }
+                return left(stream).has_value() || right(stream).has_value();
             }));
 }
 
@@ -545,6 +538,14 @@ Parser<bool> operator|(const Parser<bool> &left, const Parser<T> &right)
             }));
 }
 
+inline Parser<bool> operator|(const Parser<bool> &left, const Parser<bool> &right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                return left(stream) || right(stream);
+            }));
+}
 
 
 template <typename T>
@@ -584,7 +585,7 @@ Parser<bool> operator*(const Parser<T> &parser)
             }));
 }
 
-Parser<std::vector<char>> operator*(const Parser<char> &parser)
+inline Parser<std::vector<char>> operator*(const Parser<char> &parser)
 {
     return Parser<std::vector<char>>(std::function<std::optional<std::vector<char>>(std::string_view &stream)>
             ([=](std::string_view &stream)-> std::optional<std::vector<char>>
@@ -610,7 +611,7 @@ Parser<bool> operator+(const Parser<T> &parser)
     return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
-                if (steam.empty())
+                if (stream.empty())
                 {
                     return false;
                 }
@@ -641,7 +642,7 @@ Parser<bool> operator+(const Parser<T> &parser)
             }));
 }
 
-Parser<std::vector<char>> operator+(const Parser<char> &parser)
+inline Parser<std::vector<char>> operator+(const Parser<char> &parser)
 {
     return Parser<std::vector<char>>(std::function<std::optional<std::vector<char>>(std::string_view &stream)>
             ([=](std::string_view &stream)-> std::optional<std::vector<char>>
@@ -1015,7 +1016,6 @@ inline Parser<std::vector<char>> pair(const Parser<L> &left, const Parser<R> &ri
                     if (right(stream_copy))
                     {
                         --pari_count;
-                        right_length = temp - stream_copy.length();
                         continue;
                     }
                 }
@@ -1024,7 +1024,6 @@ inline Parser<std::vector<char>> pair(const Parser<L> &left, const Parser<R> &ri
                     if (right(stream_copy).has_value())
                     {
                         --pari_count;
-                        right_length = temp - stream_copy.length();
                         continue;
                     }
                 }
@@ -1319,7 +1318,7 @@ Parser<bool> operator>>(const Parser<bool> *left, const Parser<T> &right)
             }));
 }
 
-Parser<bool> operator>>(const Parser<bool> &left, const Parser<bool> *right)
+inline Parser<bool> operator>>(const Parser<bool> &left, const Parser<bool> *right)
 {
     return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
@@ -1337,7 +1336,7 @@ Parser<bool> operator>>(const Parser<bool> &left, const Parser<bool> *right)
             }));
 }
 
-Parser<bool> operator>>(const Parser<bool> *left, const Parser<bool> &right)
+inline Parser<bool> operator>>(const Parser<bool> *left, const Parser<bool> &right)
 {
     return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
@@ -1362,14 +1361,54 @@ Parser<bool> operator|(const Parser<L> &left, const Parser<R> *right)
     return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
-                return left(stream).has_value() || right->operator()(stream).has_value();
+                if constexpr(std::is_same<L, bool>::value && std::is_same<R, bool>::value)
+                {
+                    return left(stream) || right->operator()(stream);
+                }
+                else if constexpr(std::is_same<L, bool>::value)
+                {
+                    return left(stream) || right->operator()(stream).has_value();
+                }
+                else if constexpr(std::is_same<R, bool>::value)
+                {
+                    return left(stream).has_value() || right->operator()(stream);
+                }
+                else
+                {
+                    return left(stream).has_value() || right->operator()(stream).has_value();
+                }
+            }));
+}
+
+template <typename L, typename R>
+Parser<bool> operator|(const Parser<L> *left, const Parser<R> &right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                if constexpr(std::is_same<L, bool>::value && std::is_same<R, bool>::value)
+                {
+                    return left->operator()(stream) || right(stream);
+                }
+                else if constexpr(std::is_same<L, bool>::value)
+                {
+                    return left->operator()(stream) || right(stream).has_value();
+                }
+                else if constexpr(std::is_same<R, bool>::value)
+                {
+                    return left->operator()(stream).has_value() || right(stream);
+                }
+                else
+                {
+                    return left->operator()(stream).has_value() || right(stream).has_value();
+                }
             }));
 }
 
 template <typename T>
 Parser<bool> operator|(const Parser<T> *left, const Parser<T> &right)
 {
-    return Parser<T>(std::function<bool(std::string_view &stream)>
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
                 if constexpr(std::is_same<T, bool>::value)
@@ -1386,7 +1425,7 @@ Parser<bool> operator|(const Parser<T> *left, const Parser<T> &right)
 template <typename T>
 Parser<bool> operator|(const Parser<T> &left, const Parser<T> *right)
 {
-    return Parser<T>(std::function<bool(std::string_view &stream)>
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
                 if constexpr(std::is_same<T, bool>::value)
