@@ -34,7 +34,7 @@ int main()
 
     Parser<bool> key, value, array;
     key = confix_p(ch_p('\"'), (*anychar_p())[prints_a], ch_p('\"'));
-    value = key | float_p()[([&](const double v) { importer.print(v); })] | ref(array);
+    value = key | float_p()[([&](const double v) { importer.print(v); })] | std::ref(array);
     array = pair(ch_p('['), list(value, *ch_p(' ') >> ch_p(',') >> *ch_p(' ')), ch_p(']'));
 
     std::string_view text("[123, [23, 45], 76]");
