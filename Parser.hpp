@@ -50,6 +50,8 @@ struct Parser<bool>
     Parser(const std::function<bool(std::string_view &)> &f)
         : func(f) {};
 
+    Parser() {}
+
     template <typename T>
     Parser(const Parser<T> &parser)
         : func([=](std::string_view &stream){return parser.func(stream).has_value();}), call(parser.call) {}
@@ -512,7 +514,14 @@ Parser<bool> operator|(const Parser<T> &left, const Parser<T> &right)
     return Parser<T>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
-                return left(stream).has_value() || right(stream).has_value();
+                if constexpr(std::is_same<T, bool>::value)
+                {
+                    return left(stream) || right(stream);
+                }
+                else
+                {
+                    return left(stream).has_value() || right(stream).has_value();
+                }
             }));
 }
 
@@ -1004,6 +1013,99 @@ inline Parser<std::vector<char>> pair(const Parser<L> &left, const Parser<R> &ri
         }));
 }
 
+template <typename A, typename B, typename C>
+inline Parser<bool> pair(const Parser<A> &left, const Parser<B> &exp, const Parser<C> &right)
+{
+     return Parser<bool>(std::function<bool(std::string_view &)>(
+        [=](std::string_view &stream) -> bool
+        {
+            if (stream.empty())
+            {
+                return false;
+            }
+            
+            std::string_view stream_copy(stream);
+            if constexpr(std::is_same<C, bool>::value)
+            {
+                if (!left(stream_copy))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!left(stream_copy).has_value())
+                {
+                    return false;
+                }
+            }
+
+            size_t pari_count = 1, left_length = stream.length() - stream_copy.length();
+            size_t temp = 0, right_length = 0;
+            while (pari_count > 0 && !stream_copy.empty())
+            {
+                temp = stream_copy.length();
+                if constexpr(std::is_same<C, bool>::value)
+                {
+                    if (right(stream_copy))
+                    {
+                        --pari_count;
+                        right_length = temp - stream_copy.length();
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (right(stream_copy).has_value())
+                    {
+                        --pari_count;
+                        right_length = temp - stream_copy.length();
+                        continue;
+                    }
+                }
+                
+                if constexpr(std::is_same<A, bool>::value)
+                {
+                    if (left(stream_copy))
+                    {
+                        ++pari_count;
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (left(stream_copy).has_value())
+                    {
+                        ++pari_count;
+                        continue;
+                    }
+                }
+
+                stream_copy.remove_prefix(1);
+            }
+            if (pari_count == 0)
+            {
+                std::string_view stream_copy2 = stream.substr(0, stream.length() - stream_copy.length());
+                stream_copy2.remove_prefix(left_length);
+                stream_copy2.remove_suffix(right_length);
+                exp(stream_copy2);
+                if (stream_copy2.empty())
+                {
+                    stream.remove_prefix(stream.length() - stream_copy.length());
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }));
+}
+
 template <typename T>
 inline Parser<bool> repeat(const size_t times, const Parser<T> &parser)
 {
@@ -1071,3 +1173,183 @@ inline Parser<std::vector<char>> repeat(const size_t times, const Parser<char> &
             }
         }));
 }
+
+
+template <typename T>
+inline Parser<T> *ref(Parser<T> &parser)
+{
+    return &parser;
+}
+
+
+
+// pointer functions
+
+template <typename L, typename R>
+Parser<bool> operator>>(const Parser<L> &left, const Parser<R> *right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                std::string_view stream_copy(stream);
+                std::optional<L> result_l = left(stream_copy);
+                if (!result_l.has_value())
+                {
+                    return false;
+                }
+                std::optional<R> result_r = right->operator()(stream_copy);
+                if (!result_r.has_value())
+                {
+                    return false;
+                };
+                stream.remove_prefix(stream.length() - stream_copy.length());
+                return true;
+            }));
+}
+
+template <typename T>
+Parser<bool> operator>>(const Parser<T> *left, const Parser<T> &right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                std::string_view stream_copy(stream);
+                std::optional<T> result_l = left->operator()(stream_copy);
+                if (!result_l.has_value())
+                {
+                    return false;
+                }
+                std::optional<T> result_r = right(stream_copy);
+                if (!result_r.has_value())
+                {
+                    return false;
+                };
+                stream.remove_prefix(stream.length() - stream_copy.length());
+                return true;
+            }));
+}
+
+template <typename T>
+Parser<bool> operator>>(const Parser<T> &left, const Parser<bool> *right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                std::string_view stream_copy(stream);
+                std::optional<T> result_l = left(stream_copy);
+                if (!result_l.has_value())
+                {
+                    return false;
+                }
+                if (!right->operator()(stream_copy))
+                {
+                    return false;
+                };
+                stream.remove_prefix(stream.length() - stream_copy.length());
+                return true;
+            }));
+}
+
+template <typename T>
+Parser<bool> operator>>(const Parser<bool> *left, const Parser<T> &right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                std::string_view stream_copy(stream);
+                if (!left->operator()(stream_copy))
+                {
+                    return false;
+                }
+                std::optional<T> result_r = right(stream_copy);
+                if (!result_r.has_value())
+                {
+                    return false;
+                };
+                stream.remove_prefix(stream.length() - stream_copy.length());
+                return true;
+            }));
+}
+
+Parser<bool> operator>>(const Parser<bool> &left, const Parser<bool> *right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                std::string_view stream_copy(stream);
+                if (left(stream_copy) && right->operator()(stream_copy))
+                {
+                    stream.remove_prefix(stream.length() - stream_copy.length());
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }));
+}
+
+Parser<bool> operator>>(const Parser<bool> *left, const Parser<bool> &right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                std::string_view stream_copy(stream);
+                if (left->operator()(stream_copy) && right(stream_copy))
+                {
+                    stream.remove_prefix(stream.length() - stream_copy.length());
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }));
+}
+
+
+template <typename L, typename R>
+Parser<bool> operator|(const Parser<L> &left, const Parser<R> *right)
+{
+    return Parser<bool>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                return left(stream).has_value() || right->operator()(stream).has_value();
+            }));
+}
+
+template <typename T>
+Parser<bool> operator|(const Parser<T> *left, const Parser<T> &right)
+{
+    return Parser<T>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                if constexpr(std::is_same<T, bool>::value)
+                {
+                    return left->operator()(stream) || right(stream);
+                }
+                else
+                {
+                    return left->operator()(stream).has_value() || right(stream).has_value();
+                }
+            }));
+}
+
+template <typename T>
+Parser<bool> operator|(const Parser<T> &left, const Parser<T> *right)
+{
+    return Parser<T>(std::function<bool(std::string_view &stream)>
+            ([=](std::string_view &stream)-> bool
+            {
+                if constexpr(std::is_same<T, bool>::value)
+                {
+                    return left(stream) || right->operator()(stream);
+                }
+                else
+                {
+                    return left(stream).has_value() || right->operator()(stream).has_value();
+                }
+            }));
+}
+
+

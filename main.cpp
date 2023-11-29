@@ -32,11 +32,12 @@ int main()
     Action<std::string> prints_a(&importer, &Importer::print);
     Action<double> printd_a(&importer, &Importer::print);
 
-    Parser<bool> key = confix_p(ch_p('\"'), (*anychar_p())[prints_a], ch_p('\"'));
-    Parser<bool> value = key | float_p()[([&](const double v) { importer.print(v); })];
-    Parser<bool> array = confix_p(ch_p('['), *((float_p()[printd_a] | key) >> *ch_p(' ') >> ch_p(',')) >> *ch_p(' ') >> !(float_p()[printd_a] | key), ch_p(']'))[print_a];
+    Parser<bool> key, value, array;
+    key = confix_p(ch_p('\"'), (*anychar_p())[prints_a], ch_p('\"'));
+    value = key | float_p()[([&](const double v) { importer.print(v); })] | ref(array);
+    array = pair(ch_p('['), list(value, *ch_p(' ') >> ch_p(',') >> *ch_p(' ')), ch_p(']'));
 
-    std::string_view text("[123, \"Hello\"]");
+    std::string_view text("[123, [23, 45], 76]");
     array(text);
 
     return 0;
