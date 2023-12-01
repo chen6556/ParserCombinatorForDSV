@@ -338,7 +338,7 @@ struct Parser<int>
                 ++index;
                 num.emplace_back('-');
             }
-            while ( !stream.empty() && '0' <= stream[index] && stream[index] <= '9')
+            while (index < stream.length() && '0' <= stream[index] && stream[index] <= '9')
             {
                 num.emplace_back(stream[index++]);
             }
@@ -482,7 +482,7 @@ Parser<bool> operator*(const Parser<T> &parser)
             {
                 if (stream.empty())
                 {
-                    return false;
+                    return true;
                 }
                 if constexpr(std::is_same<T, bool>::value)
                 {
@@ -503,7 +503,7 @@ inline Parser<std::vector<char>> operator*(const Parser<char> &parser)
             {
                 if (stream.empty())
                 {
-                    return std::nullopt;
+                    return std::vector<char>();
                 }
                 std::optional<char> temp = parser(stream);
                 std::vector<char> result;
@@ -1296,10 +1296,10 @@ Parser<bool> operator!(const std::reference_wrapper<Parser<T>> &parser)
     return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
-                if (stream.empty())
-                {
-                    return false;
-                }
+                // if (stream.empty())
+                // {
+                //     return false;
+                // }
                 parser(stream);
                 return true;
             }));
@@ -1315,7 +1315,7 @@ Parser<bool> operator*(const std::reference_wrapper<Parser<T>> &parser)
             {
                 if (stream.empty())
                 {
-                    return false;
+                    return true;
                 }
                 if constexpr(std::is_same<T, bool>::value)
                 {
@@ -1336,7 +1336,7 @@ inline Parser<std::vector<char>> operator*(const std::reference_wrapper<Parser<c
             {
                 if (stream.empty())
                 {
-                    return std::nullopt;
+                    return std::vector<char>();
                 }
                 std::optional<char> temp = parser(stream);
                 std::vector<char> result;
