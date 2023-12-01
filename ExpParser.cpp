@@ -41,18 +41,18 @@ static Action<void> mul_a(&importer, &Importer::mul);
 static Action<void> div_a(&importer, &Importer::div);
 static Action<int> num_a(&importer, &Importer::num);
 
-Parser<bool> Importer::exper = std::ref(term) >>
+Parser<bool> Parsers::exper = std::ref(term) >>
     *((ch_p('+') >> std::ref(term))[add_a] | (ch_p('-') >> std::ref(term))[sub_a]);
 
-Parser<bool> Importer::term = std::ref(factor) >>
+Parser<bool> Parsers::term = std::ref(factor) >>
     *((ch_p('*') >> std::ref(factor))[mul_a] | (ch_p('/') >> std::ref(factor))[div_a]);
 
-Parser<bool> Importer::factor = int_p()[num_a] | confix_p(ch_p('('), std::ref(exper), ch_p(')'));
+Parser<bool> Parsers::factor = int_p()[num_a] | confix_p(ch_p('('), std::ref(exper), ch_p(')'));
 
 
 bool ExpParser::parse(std::string_view &stream)
 {
-    return Importer::exper(stream);
+    return Parsers::exper(stream);
 }
 
 bool ExpParser::parse(std::ifstream &stream)
@@ -61,7 +61,7 @@ bool ExpParser::parse(std::ifstream &stream)
     sstream << stream.rdbuf();
     std::string str(sstream.str());
     std::string_view temp(str);
-    return Importer::exper(temp);
+    return Parsers::exper(temp);
 }
 
 

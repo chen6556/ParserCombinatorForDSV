@@ -10,9 +10,6 @@ namespace ExpParser
 class Importer
 {
 public:
-    static Parser<bool> exper, term, factor;
-
-public:
     void add();
 
     void sub();
@@ -22,6 +19,11 @@ public:
     void div();
 
     void num(const int value);
+};
+
+struct Parsers
+{
+    static Parser<bool> exper, term, factor;
 };
 
 bool parse(std::string_view &stream);
