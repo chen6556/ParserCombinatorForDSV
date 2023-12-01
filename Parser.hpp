@@ -467,7 +467,7 @@ Parser<bool> operator!(const Parser<T> &parser)
             {
                 if (stream.empty())
                 {
-                    return false;
+                    return true;
                 }
                 parser(stream);
                 return true;
@@ -1296,10 +1296,10 @@ Parser<bool> operator!(const std::reference_wrapper<Parser<T>> &parser)
     return Parser<bool>(std::function<bool(std::string_view &stream)>
             ([=](std::string_view &stream)-> bool
             {
-                // if (stream.empty())
-                // {
-                //     return false;
-                // }
+                if (stream.empty())
+                {
+                    return true;
+                }
                 parser(stream);
                 return true;
             }));
