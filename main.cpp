@@ -1,43 +1,16 @@
 #include <iostream>
-#include "ParserGen1.hpp"
-
-
-class Importer
-{
-private:
-    size_t count = 0;
-
-public:
-    void print()
-    {
-        std::cout << "Get " << count << " times." << std::endl;
-    }
-
-    void print(const std::string &str)
-    {
-        std::cout << "Get " << count++ << " : " << str << std::endl;
-    }
-
-    void print(const double value)
-    {
-        std::cout << "Get " << count++ << " : " << value << std::endl;
-    }
-};
+#include "ExpParser.hpp"
 
 
 int main()
 {
-    Importer importer;
-    Action<void> print_a(&importer, &Importer::print);
-    Action<std::string> prints_a(&importer, &Importer::print);
-    Action<double> printd_a(&importer, &Importer::print);
+    std::string_view exp0("12+24*4+7*8");
+    ExpParser::parse(exp0);
+    std::cout << std::endl;
 
-    auto key = confix_p(ch_p('\"'), (*anychar_p())[prints_a], ch_p('\"'));
-    auto value = key | float_p()[([&](const double v) { importer.print(v); })];
-    auto array = confix_p(ch_p('['), *((float_p()[printd_a] | key) >> *ch_p(' ') >> ch_p(',')) >> *ch_p(' ') >> !(float_p()[printd_a] | key), ch_p(']'))[print_a];
-
-    std::string_view text("[123, \"Hello\"]");
-    array(text);
+    std::string_view exp1("12+24*(4+7)*8");
+    ExpParser::parse(exp1);
+    std::cout << std::endl;
 
     return 0;
 }
