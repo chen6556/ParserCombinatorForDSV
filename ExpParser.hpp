@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <fstream>
-#include "Parser.hpp"
+#include "ParserGen2.hpp"
 
 
 namespace ExpParser
