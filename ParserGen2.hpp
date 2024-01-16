@@ -273,7 +273,7 @@ struct Parser<double>
                     find_point = true;
                 }
             }
-            if (index < stream.length() && (stream[index] == 'e' || stream[index] == 'E'))
+            if (index < stream.length() && !num.empty() && (stream[index] == 'e' || stream[index] == 'E'))
             {
                 num.emplace_back(stream[index++]);
                 if (index < stream.length() && stream[index] == '-')
@@ -284,7 +284,7 @@ struct Parser<double>
                 {
                     num.emplace_back(stream[index++]);
                 }
-                while (num.back() < '0' || num.back() > '9')
+                while (!num.empty() && (num.back() < '0' || num.back() > '9'))
                 {
                     num.pop_back();
                     --index;
