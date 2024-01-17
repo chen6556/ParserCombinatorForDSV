@@ -440,7 +440,7 @@ inline Parser<std::string> operator+(const Parser<std::string> &parser)
                 size_t count = 0;
                 while (temp.has_value())
                 {
-                    result.append( temp.value());
+                    result.append(temp.value());
                     temp = parser(stream);
                     ++count;
                 }
@@ -742,9 +742,8 @@ Parser<std::string> pair(const Parser<L> &left, const Parser<R> &right)
             }
             if (pari_count == 0)
             {
-                std::vector<char> result(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
                 stream.remove_prefix(stream.length() - stream_copy.length());
-                return std::string(result.begin(), result.end());
+                return std::string(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
             }
             else
             {
@@ -2506,9 +2505,8 @@ Parser<std::string> pair(const Parser<L> &left, const std::reference_wrapper<Par
             }
             if (pari_count == 0)
             {
-                std::vector<char> result(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
                 stream.remove_prefix(stream.length() - stream_copy.length());
-                return std::string(result.begin(), result.end());
+                return std::string(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
             }
             else
             {
@@ -2584,9 +2582,8 @@ Parser<std::string> pair(const std::reference_wrapper<Parser<L>> &left, const Pa
             }
             if (pari_count == 0)
             {
-                std::vector<char> result(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
                 stream.remove_prefix(stream.length() - stream_copy.length());
-                return std::string(result.begin(), result.end());
+                return std::string(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
             }
             else
             {
@@ -2662,9 +2659,8 @@ Parser<std::string> pair(const std::reference_wrapper<Parser<L>> &left, const st
             }
             if (pari_count == 0)
             {
-                std::vector<char> result(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
                 stream.remove_prefix(stream.length() - stream_copy.length());
-                return std::string(result.begin(), result.end());
+                return std::string(stream.begin(), stream.begin() + stream.length() - stream_copy.length());
             }
             else
             {

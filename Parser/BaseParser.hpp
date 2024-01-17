@@ -119,7 +119,7 @@ struct Parser<std::string>
     std::optional<std::string> operator()(std::string_view &stream) const
     {
         const std::optional<std::string> result = this->func(stream);
-        if (result.has_value() && this->call)
+        if (result.has_value())
         {
             if (this->void_call)
             {
@@ -151,7 +151,7 @@ struct Parser<std::string>
         return *this;
     }
 
-    Parser<std::string> &operator[](const std::function<void(std::string)> &f)
+    Parser<std::string> &operator[](const std::function<void(const std::string)> &f)
     {
         call = f;
         return *this;
@@ -162,7 +162,8 @@ template <>
 struct Parser<char>
 {
     std::function<std::optional<char>(std::string_view &)> func;
-    Action<void> call;
+    Action<void> void_call;
+    Action<char> call;
 
     Parser(const std::function<std::optional<char>(std::string_view &)> &f)
         : func(f) {}
@@ -183,25 +184,44 @@ struct Parser<char>
         ) {}
 
     Parser(const Parser<char> &parser)
-        : func(parser.func), call(parser.call) {}
+        : func(parser.func), call(parser.call), void_call(parser.void_call) {}
 
     std::optional<char> operator()(std::string_view &stream) const
     {
         const std::optional<char> result = this->func(stream);
-        if (result.has_value() && this->call)
+        if (result.has_value())
         {
-            this->call();
+            if (this->void_call)
+            {
+                this->void_call();
+            }
+            else if (this->call)
+            {
+                this->call(result.value());
+            }
         }
         return result;
     }
 
     Parser<char> &operator[](Action<void> &action)
     {
-        call = action;
+        void_call = action;
         return *this;
     }
 
     Parser<char> &operator[](const std::function<void(void)> &f)
+    {
+        void_call = f;
+        return *this;
+    }
+
+    Parser<char> &operator[](Action<char> &action)
+    {
+        call = action;
+        return *this;
+    }
+
+    Parser<char> &operator[](const std::function<void(const char)> &f)
     {
         call = f;
         return *this;
