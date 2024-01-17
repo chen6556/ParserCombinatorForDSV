@@ -91,38 +91,6 @@ struct Parser<std::string>
 };
 
 template <>
-struct Parser<std::vector<std::string>>
-{
-    std::function<std::optional<std::vector<std::string>>(std::string_view &)> func;
-    Action<void> call;
-
-    Parser(const std::function<std::optional<std::vector<std::string>>(std::string_view &)> &f)
-        : func(f) {};
-
-    std::optional<std::vector<std::string>> operator()(std::string_view &stream) const
-    {
-        const std::optional<std::vector<std::string>> result = this->func(stream);
-        if (result.has_value() && this->call)
-        {
-            this->call();
-        }
-        return result;
-    }
-
-    Parser<std::vector<std::string>> &operator[](Action<void> &action)
-    {
-        call = action;
-        return *this;
-    }
-
-    Parser<std::vector<std::string>> &operator[](const std::function<void(void)> &f)
-    {
-        call = f;
-        return *this;
-    }
-};
-
-template <>
 struct Parser<char>
 {
     std::function<std::optional<char>(std::string_view &)> func;
@@ -168,61 +136,6 @@ struct Parser<char>
     Parser<char> &operator[](const std::function<void(void)> &f)
     {
         call = f;
-        return *this;
-    }
-};
-
-template <>
-struct Parser<std::vector<char>>
-{
-    std::function<std::optional<std::vector<char>>(std::string_view &)> func;
-    Action<std::string> call;
-    Action<void> void_call;
-
-    Parser(const std::function<std::optional<std::vector<char>>(std::string_view &)> &f)
-        : func(f) {};
-
-    Parser(const Parser<std::vector<char>> &parser)
-        : func(parser.func), call(parser.call), void_call(parser.void_call) {};
-
-    std::optional<std::vector<char>> operator()(std::string_view &stream) const
-    {
-        const std::optional<std::vector<char>> result = this->func(stream);
-        if (result.has_value())
-        {
-            if (this->call)
-            {
-                this->call(std::string(result.value().begin(), result.value().end()));
-            }
-            else if (this->void_call)
-            {
-                this->void_call();
-            }
-        }
-        return result;
-    }
-
-    Parser<std::vector<char>> &operator[](Action<std::string> &action)
-    {
-        call = action;
-        return *this;
-    }
-
-    Parser<std::vector<char>> &operator[](Action<void> &action)
-    {
-        void_call = action;
-        return *this;
-    }
-
-    Parser<std::vector<char>> &operator[](const std::function<void(const std::string &)> &f)
-    {
-        call = f;
-        return *this;
-    }
-
-    Parser<std::vector<char>> &operator[](const std::function<void(void)> &f)
-    {
-        void_call = f;
         return *this;
     }
 };
@@ -593,10 +506,10 @@ Parser<T> operator>>(const Parser<char> &left, const Parser<T> &right)
             }));
 }
 
-inline Parser<char> operator>>(const Parser<std::string> &left, const Parser<std::string> &right)
+inline Parser<std::string> operator>>(const Parser<std::string> &left, const Parser<std::string> &right)
 {
-    return Parser<char>(std::function<std::optional<char>(std::string_view& stream)>
-            ([=](std::string_view& stream)-> std::optional<char>
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view& stream)>
+            ([=](std::string_view& stream)-> std::optional<std::string>
             {
                 std::string_view stream_copy(stream);
                 std::optional<std::string> result_l = left(stream_copy);
@@ -610,14 +523,14 @@ inline Parser<char> operator>>(const Parser<std::string> &left, const Parser<std
                     return std::nullopt;
                 };
                 stream.remove_prefix(stream.length() - stream_copy.length());
-                return ' ';
+                return result_l.value() + result_r.value();
             }));
 }
 
-inline Parser<char> operator>>(const Parser<std::string> &left, const Parser<char> &right)
+inline Parser<std::string> operator>>(const Parser<std::string> &left, const Parser<char> &right)
 {
-    return Parser<char>(std::function<std::optional<char>(std::string_view &stream)>
-            ([=](std::string_view &stream)-> std::optional<char>
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view &stream)>
+            ([=](std::string_view &stream)-> std::optional<std::string>
             {
                 std::string_view stream_copy(stream);
                 std::optional<std::string> result_l = left(stream_copy);
@@ -631,124 +544,18 @@ inline Parser<char> operator>>(const Parser<std::string> &left, const Parser<cha
                     return std::nullopt;
                 };
                 stream.remove_prefix(stream.length() - stream_copy.length());
-                return ' ';
-            }));
-}
-
-inline Parser<char> operator>>(const Parser<char> &left, const Parser<std::string> &right)
-{
-    return Parser<char>(std::function<std::optional<char>(std::string_view &stream)>
-            ([=](std::string_view &stream)-> std::optional<char>
-            {
-                std::string_view stream_copy(stream);
-                std::optional<char> result_l = left(stream_copy);
-                if (!result_l.has_value())
-                {
-                    return std::nullopt;
-                }
-                std::optional<std::string> result_r = right(stream_copy);
-                if (!result_r.has_value())
-                {
-                    return std::nullopt;
-                };
-                stream.remove_prefix(stream.length() - stream_copy.length());
-                return ' ';
-            }));
-}
-
-inline Parser<char> operator>>(const Parser<char> &left, const Parser<char> &right)
-{
-    return Parser<char>(std::function<std::optional<char>(std::string_view &stream)>
-            ([=](std::string_view &stream)-> std::optional<char>
-            {
-                std::string_view stream_copy(stream);
-                std::optional<char> result_l = left(stream_copy);
-                if (!result_l.has_value())
-                {
-                    return std::nullopt;
-                }
-                std::optional<char> result_r = right(stream_copy);
-                if (!result_r.has_value())
-                {
-                    return std::nullopt;
-                };
-                stream.remove_prefix(stream.length() - stream_copy.length());
-                return ' ';
-            }));
-}
-
-inline Parser<std::vector<char>> operator>>(const Parser<char> &left, const Parser<std::vector<char>> &right)
-{
-    return Parser<std::vector<char>>(std::function<std::optional<std::vector<char>>(std::string_view &stream)>
-            ([=](std::string_view &stream)-> std::optional<std::vector<char>>
-            {
-                std::string_view stream_copy(stream);
-                std::optional<char> result_l = left(stream_copy);
-                if (!result_l.has_value())
-                {
-                    return std::nullopt;
-                }
-                std::optional<std::vector<char>> result_r = right(stream_copy);
-                if (!result_r.has_value())
-                {
-                    return std::nullopt;
-                };
-                result_r.value().insert(result_r.value().begin(), result_l.value());
-                stream.remove_prefix(stream.length() - stream_copy.length());
-                return result_r.value();
-            }));
-}
-
-inline Parser<std::vector<char>> operator>>(const Parser<std::vector<char>> &left, const Parser<char> &right)
-{
-    return Parser<std::vector<char>>(std::function<std::optional<std::vector<char>>(std::string_view &stream)>
-            ([=](std::string_view &stream)-> std::optional<std::vector<char>>
-            {
-                std::string_view stream_copy(stream);
-                std::optional<std::vector<char>> result_l = left(stream_copy);
-                if (!result_l.has_value())
-                {
-                    return std::nullopt;
-                }
-                std::optional<char> result_r = right(stream_copy);
-                if (!result_r.has_value())
-                {
-                    return std::nullopt;
-                };
                 result_l.value().push_back(result_r.value());
-                stream.remove_prefix(stream.length() - stream_copy.length());
-                return result_l.value();
+                return result_l;
             }));
 }
 
-inline Parser<char> operator>>(const Parser<std::string> &left, const Parser<std::vector<std::string>> &right)
+inline Parser<std::string> operator>>(const Parser<char> &left, const Parser<std::string> &right)
 {
-    return Parser<char>(std::function<std::optional<char>(std::string_view &stream)>
-            ([=](std::string_view &stream)-> std::optional<char>
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view &stream)>
+            ([=](std::string_view &stream)-> std::optional<std::string>
             {
                 std::string_view stream_copy(stream);
-                std::optional<std::string> result_l = left(stream_copy);
-                if (!result_l.has_value())
-                {
-                    return std::nullopt;
-                }
-                std::optional<std::vector<std::string>> result_r = right(stream_copy);
-                if (!result_r.has_value())
-                {
-                    return std::nullopt;
-                };
-                stream.remove_prefix(stream.length() - stream_copy.length());
-                return ' ';
-            }));
-}
-
-inline Parser<char> operator>>(const Parser<std::vector<std::string>> &left, const Parser<std::string> &right)
-{
-    return Parser<char>(std::function<std::optional<char>(std::string_view &stream)>
-            ([=](std::string_view &stream)-> std::optional<char>
-            {
-                std::string_view stream_copy(stream);
-                std::optional<std::vector<std::string>> result_l = left(stream_copy);
+                std::optional<char> result_l = left(stream_copy);
                 if (!result_l.has_value())
                 {
                     return std::nullopt;
@@ -759,7 +566,29 @@ inline Parser<char> operator>>(const Parser<std::vector<std::string>> &left, con
                     return std::nullopt;
                 };
                 stream.remove_prefix(stream.length() - stream_copy.length());
-                return ' ';
+                result_r.value().insert(result_r.value().begin(), result_l.value());
+                return result_r;
+            }));
+}
+
+inline Parser<std::string> operator>>(const Parser<char> &left, const Parser<char> &right)
+{
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view &stream)>
+            ([=](std::string_view &stream)-> std::optional<std::string>
+            {
+                std::string_view stream_copy(stream);
+                std::optional<char> result_l = left(stream_copy);
+                if (!result_l.has_value())
+                {
+                    return std::nullopt;
+                }
+                std::optional<char> result_r = right(stream_copy);
+                if (!result_r.has_value())
+                {
+                    return std::nullopt;
+                };
+                stream.remove_prefix(stream.length() - stream_copy.length());
+                return std::string({result_l.value(), result_r.value()});
             }));
 }
 
@@ -847,7 +676,51 @@ Parser<std::vector<T>> operator|(const Parser<std::vector<T>> &left, const Parse
             }));
 }
 
+inline Parser<std::string> operator|(const Parser<std::string> &left, const Parser<char> &right)
+{
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view &stream)>
+            ([=](std::string_view &stream)-> std::optional<std::string>
+            {
+                std::string_view stream_copy(stream);
+                std::optional<std::string> result_l = left(stream_copy);
+                if (result_l.has_value())
+                {
+                    stream.remove_prefix(result_l.value().length());
+                    return result_l;
+                }
+                std::optional<char> result_r = right(stream_copy);
+                if (result_r.has_value())
+                {
+                    stream.remove_prefix(1);
+                    return std::string({result_r.value()});
+                };
+                return std::nullopt;
+            }));
+}
 
+inline Parser<std::string> operator|(const Parser<char> &left, const Parser<std::string> &right)
+{
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view &stream)>
+            ([=](std::string_view &stream)-> std::optional<std::string>
+            {
+                std::string_view stream_copy(stream);
+                std::optional<char> result_l = left(stream_copy);
+                if (result_l.has_value())
+                {
+                    stream.remove_prefix(1);
+                    return std::string({result_l.value()});
+                }
+                std::optional<std::string> result_r = right(stream_copy);
+                if (result_r.has_value())
+                {
+                    stream.remove_prefix(result_r.value().length());
+                    return result_r;
+                };
+                return std::nullopt;
+            }));
+}
+
+// operator!
 
 template <typename T>
 Parser<std::optional<T>> operator!(const Parser<T> &parser)
@@ -858,6 +731,8 @@ Parser<std::optional<T>> operator!(const Parser<T> &parser)
                 return parser(stream);
             }));
 }
+
+// operator*
 
 template <typename T>
 Parser<std::vector<T>> operator*(const Parser<T> &parser)
@@ -875,6 +750,40 @@ Parser<std::vector<T>> operator*(const Parser<T> &parser)
                 return result;
             }));
 }
+
+inline Parser<std::string> operator*(const Parser<char> &parser)
+{
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view& stream)>
+            ([=](std::string_view& stream)-> std::optional<std::string>
+            {
+                std::optional<char> temp = parser(stream);
+                std::vector<char> result;
+                while (temp.has_value())
+                {
+                    result.emplace_back(temp.value());
+                    temp = parser(stream);
+                }
+                return std::string(result.begin(), result.end());
+            }));
+}
+
+inline Parser<std::string> operator*(const Parser<std::string> &parser)
+{
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view& stream)>
+            ([=](std::string_view& stream)-> std::optional<std::string>
+            {
+                std::optional<std::string> temp = parser(stream);
+                std::string result;
+                while (temp.has_value())
+                {
+                    result.append(temp.value());
+                    temp = parser(stream);
+                }
+                return result;
+            }));
+}
+
+// operator+
 
 template <typename T>
 Parser<std::vector<T>> operator+(const Parser<T> &parser)
@@ -899,6 +808,56 @@ Parser<std::vector<T>> operator+(const Parser<T> &parser)
                 }
             }));
 }
+
+inline Parser<std::string> operator+(const Parser<char> &parser)
+{
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view& stream)>
+            ([=](std::string_view& stream)-> std::optional<std::string>
+            {
+                std::optional<char> temp = parser(stream);
+                std::vector<char> result;
+                while (temp.has_value())
+                {
+                    result.emplace_back(temp.value());
+                    temp = parser(stream);
+                }
+                if (result.empty())
+                {
+                    return std::nullopt;
+                }
+                else
+                {
+                    return std::string(result.begin(), result.end());
+                }
+            }));
+}
+
+inline Parser<std::string> operator+(const Parser<std::string> &parser)
+{
+    return Parser<std::string>(std::function<std::optional<std::string>(std::string_view& stream)>
+            ([=](std::string_view& stream)-> std::optional<std::string>
+            {
+                std::optional<std::string> temp = parser(stream);
+                std::string result;
+                size_t count = 0;
+                while (temp.has_value())
+                {
+                    result.append(temp.value());
+                    temp = parser(stream);
+                    ++count;
+                }
+                if (count > 0)
+                {
+                    return result;
+                }
+                else
+                {
+                    return std::nullopt;
+                }
+            }));
+}
+
+// operator~
 
 template <typename T>
 Parser<std::string> operator~(const Parser<T> &parser)
@@ -928,6 +887,8 @@ Parser<std::string> operator~(const Parser<T> &parser)
                 }
             }));
 }
+
+// operator-
 
 template <typename L, typename R>
 Parser<L> operator-(const Parser<L> &left, const Parser<R> &right)
