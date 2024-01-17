@@ -7,7 +7,7 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(ParserCombinator main.cpp ExpParser.cpp ParserGen2.hpp BaseParser.hpp Action.hpp)
+add_executable(ParserCombinator main.cpp ExpParser.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
