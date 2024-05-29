@@ -12,5 +12,13 @@ int main()
     ExpParser::parse(exp1);
     std::cout << std::endl;
 
+    Parser<std::string> test = pair(ch_p('<'), ch_p('>'));
+    std::string_view exp2("< 12 + 24 * ( 4 + 7 ) / 8> abc");
+    std::optional<std::string> result = test(exp2);
+    if (result.has_value())
+    {
+        std::cout << result.value() << std::endl;
+    }
+
     return 0;
 }
