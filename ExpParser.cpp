@@ -90,7 +90,7 @@ Parser<bool> Parsers::exper = std::ref(term) >>
 Parser<bool> Parsers::term = std::ref(factor) >>
     *(*space >> ((ch_p('*') >> std::ref(factor))[mul_a] | (ch_p('/') >> std::ref(factor))[div_a]));
 
-Parser<bool> Parsers::factor = *space >> (int_p()[num_a] | pair(ch_p('('), std::ref(exper),  *space >> ch_p(')')));
+Parser<bool> Parsers::factor = *space >> (int_p()[num_a] | pair_p(ch_p('('), std::ref(exper),  *space >> ch_p(')')));
 
 
 bool ExpParser::parse(std::string_view &stream)

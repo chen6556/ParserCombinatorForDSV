@@ -700,13 +700,13 @@ inline Parser<std::vector<char>> confix_p(const Parser<L> &left, const Parser<R>
 }
 
 template <typename A, typename B>
-inline auto list(const Parser<A> &value, const Parser<B> &exp)
+inline auto list_p(const Parser<A> &value, const Parser<B> &exp)
 {
     return value >> *(exp >> value);
 }
 
 template <typename L, typename R>
-inline Parser<std::vector<char>> pair(const Parser<L> &left, const Parser<R> &right)
+inline Parser<std::vector<char>> pair_p(const Parser<L> &left, const Parser<R> &right)
 {
     return Parser<std::vector<char>>(std::function<std::optional<std::vector<char>>(std::string_view &)>(
         [=](std::string_view &stream) -> std::optional<std::vector<char>>
@@ -751,7 +751,7 @@ inline Parser<std::vector<char>> pair(const Parser<L> &left, const Parser<R> &ri
 }
 
 template <typename T>
-inline Parser<std::vector<T>> repeat(const size_t times, const Parser<T> &parser)
+inline Parser<std::vector<T>> repeat_p(const size_t times, const Parser<T> &parser)
 {
     return Parser<std::vector<T>>(std::function<std::optional<std::vector<T>>(std::string_view &)>(
         [=](std::string_view &stream) -> std::optional<std::vector<T>>
