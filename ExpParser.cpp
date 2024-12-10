@@ -34,7 +34,7 @@ void Importer::div()
 void Importer::num(const int value)
 {
     std::cout << value << ' ';
-    _expression.push(value);
+    _expression.push(static_cast<double>(value));
 }
 
 void Importer::solve()
@@ -93,14 +93,14 @@ Parser<bool> Parsers::term = std::ref(factor) >>
 Parser<bool> Parsers::factor = *space >> (int_p()[num_a] | pair_p(ch_p('('), std::ref(exper),  *space >> ch_p(')')));
 
 
-bool ExpParser::parse(std::string_view &stream)
+bool parse(std::string_view &stream)
 {
     const bool result = Parsers::exper(stream);
     importer.solve();
     return result;
 }
 
-bool ExpParser::parse(std::ifstream &stream)
+bool parse(std::ifstream &stream)
 {
     std::stringstream sstream;
     sstream << stream.rdbuf();
